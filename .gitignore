@@ -1,0 +1,17 @@
+# Node
+node_modules/
+
+# Environment variables
+.env
+
+# Uploads / media
+uploads/
+songs/
+
+# Builds
+dist/
+build/
+
+# System files
+.DS_Store
+Thumbs.db
