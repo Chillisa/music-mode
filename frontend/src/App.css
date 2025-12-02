@@ -1,0 +1,136 @@
+/* Make the whole page dark and centered */
+.app-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle at top, #2b2348 0, #050509 60%);
+  color: #ffffff;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+/* Landing container */
+.landing {
+  width: 100%;
+  max-width: 900px;
+  padding: 3rem 2rem;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+/* Top section: logo + text */
+.landing-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3rem;
+  flex-wrap: wrap;
+}
+
+/* Circle logo */
+.logo-circle {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(circle at top, #6f3bff 0, #3b1675 40%, #000 75%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 40px rgba(130, 75, 255, 0.6);
+}
+
+/* Three white vertical bars inside logo */
+.logo-bars {
+  display: flex;
+  gap: 10px;
+}
+
+/* Three bars with different heights */
+/* Base bar style */
+.logo-bars span {
+  display: block;
+  width: 16px;
+  border-radius: 999px;
+  background: #ffffff;
+  position: relative; /* allow vertical shifting */
+}
+
+/* Left bar (shortest, shifted down) */
+.logo-bars span:nth-child(1) {
+  height: 60px;
+  top: 12px;   /* shift downward */
+}
+
+/* Middle bar (tallest, stays centered) */
+.logo-bars span:nth-child(2) {
+  height: 90px;
+  top: 0;
+}
+
+/* Right bar (medium, shifted down slightly) */
+.logo-bars span:nth-child(3) {
+  height: 75px;
+  top: 8px;   /* shift downward */
+}
+
+/* Heading text */
+.landing-text h1 {
+  font-size: clamp(2.4rem, 4vw, 3.4rem);
+  line-height: 1.15;
+  font-weight: 700;
+}
+
+/* Buttons area */
+.landing-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+/* General button style */
+.btn {
+  width: 100%;
+  padding: 1rem 2rem;
+  border-radius: 999px;
+  font-size: 1.3rem;
+  font-weight: 600;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease,
+    background-color 0.12s ease, border-color 0.12s ease;
+}
+
+/* Sign up (purple outline) */
+.btn-primary {
+  background: #050509;
+  border-color: #a74fff;
+  color: #ffffff;
+  box-shadow: 0 0 25px rgba(167, 79, 255, 0.7);
+}
+
+/* Login (white outline) */
+.btn-secondary {
+  background: #050509;
+  border-color: #f0f0f0;
+  color: #ffffff;
+}
+
+/* Hover effects */
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+}
+
+/* Footer with backend status */
+.status-footer {
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  opacity: 0.7;
+}

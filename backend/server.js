@@ -25,9 +25,13 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+app.use("/uploads/covers", express.static("uploads/covers"));
+app.use("/uploads/songs", express.static("uploads/songs"));
+
+
 // Health check
 app.get("/api/health", (req, res) => {
-  res.json({ message: "Music Mode backend is running ✅" });
+  res.json({ status: "Music Mode backend is running ✅" });
 });
 
 // Auth routes

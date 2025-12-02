@@ -1,0 +1,92 @@
+.sidebar {
+  width: 240px;
+  background: #141414;
+  color: white;
+  padding: 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  border-right: 1px solid rgba(255,255,255,0.05);
+}
+
+/* TOP ICONS */
+.sidebar-icons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.icon-btn {
+  width: 45px;
+  height: 45px;
+  background: #222;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.icon-btn:hover {
+  background: #333;
+}
+
+/* TITLE */
+.sidebar-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-top: -0.5rem;
+}
+
+/* UNIVERSAL SIDEBAR BUTTON */
+.side-btn {
+  background: #202020;
+  padding: 0.9rem 1rem;
+  border-radius: 20px;
+  color: white;
+  width: 100%;
+  text-align: left;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: 0.25s;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.side-btn:hover {
+  background: #2c2c2c;
+  transform: scale(1.03);
+}
+
+/* PLAYLIST SECTION */
+.playlist-section {
+  margin-top: 2rem;
+}
+
+.playlist-card {
+  background: linear-gradient(135deg, #9d4bfd, #6a00ff);
+  padding: 1rem;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: 0.25s;
+}
+
+.playlist-card:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+}
+
+.playlist-card h3 {
+  margin: 0;
+}
+
+.playlist-card p {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}

@@ -1,0 +1,213 @@
+/* --- Main Layout --- */
+.edit-album-container {
+  display: flex;
+  height: 100vh;
+  background: #0b0b13;
+  color: #ffffff;
+  overflow: hidden;
+}
+
+.main-content {
+  flex: 1;
+  padding: 40px 50px;
+  overflow-y: auto;
+}
+
+.page-title {
+  font-size: 42px;
+  font-weight: 700;
+  margin-bottom: 25px;
+  letter-spacing: 1px;
+}
+
+/* --- GRID (Balanced Columns) --- */
+.edit-section {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 45px;
+  align-items: flex-start;
+}
+
+/* --- LEFT PANEL --- */
+.edit-left {
+  background: #15141d;
+  padding: 25px;
+  border-radius: 18px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.35);
+}
+
+.edit-cover-preview {
+  width: 100%;
+  height: 360px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 15px;
+  background: #222;
+}
+
+.file-btn {
+  width: 100%;
+  padding: 12px;
+  background: #222;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: center;
+  color: #ddd;
+  margin-bottom: 25px;
+  transition: 0.2s ease;
+}
+
+.file-btn:hover {
+  background: #2c2c2c;
+}
+
+.file-btn input {
+  display: none;
+}
+
+/* INPUT LABELS */
+.input-label {
+  font-size: 14px;
+  opacity: 0.85;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.input-field {
+  width: 100%;
+  padding: 13px 14px;
+  background: #1d1c25;
+  border: 1px solid #2e2d38;
+  border-radius: 10px;
+  margin-bottom: 22px;
+  font-size: 15px;
+  color: #eaeaea;
+  transition: 0.2s ease;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: #8b3dff;
+}
+
+/* BUTTONS */
+.save-btn {
+  width: 100%;
+  padding: 16px;
+  background: #8b3dff;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  font-size: 17px;
+  margin-bottom: 15px;
+  transition: 0.2s ease;
+}
+
+.save-btn:hover {
+  background: #a770ff;
+}
+
+.delete-btn {
+  width: 100%;
+  padding: 15px;
+  background: #d0342c;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  font-size: 17px;
+  transition: 0.2s ease;
+}
+
+.delete-btn:hover {
+  background: #e6473f;
+}
+
+/* --- RIGHT PANEL --- */
+.edit-right {
+  background: #15141d;
+  padding: 25px;
+  border-radius: 18px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.35);
+}
+
+.edit-right h2 {
+  font-size: 30px;
+  font-weight: 600;
+  margin-bottom: 22px;
+}
+
+/* SONG LIST */
+.song-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.song-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background: #1d1c25;
+  border-radius: 12px;
+  gap: 12px;
+}
+
+.song-title-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #f1f1f1;
+  font-size: 16px;
+}
+
+.song-title-input:focus {
+  outline: none;
+}
+
+/* DELETE BUTTON */
+.delete-song-btn {
+  padding: 7px 12px;
+  background: #d0342c;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: white;
+  font-size: 16px;
+  transition: 0.2s ease;
+}
+
+.delete-song-btn:hover {
+  background: #e24b43;
+}
+
+/* ADD NEW SONGS AREA */
+.file-btn {
+  margin-top: 25px;
+}
+
+.add-new-songs-area input {
+  display: none;
+}
+
+/* Make Upload Songs button consistent */
+.upload-btn {
+  width: 100%;
+  margin-top: 15px;
+  padding: 16px;
+  background: #8b3dff;
+  color: white;
+  border-radius: 12px;
+  cursor: pointer;
+  border: none;
+  font-size: 16px;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
+
+.upload-btn:hover {
+  background: #a770ff;
+}

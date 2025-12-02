@@ -1,0 +1,120 @@
+/* ROOT PAGE LAYOUT */
+.page-container {
+  display: flex;
+  height: 100vh;
+  background: #0d0c14;   /* FIXED DARK BACKGROUND */
+  color: white;
+}
+
+/* RIGHT SIDE CONTENT */
+.explore-container {
+  flex: 1;
+  padding: 40px;
+  overflow-y: auto;
+  background: #0d0c14;
+}
+
+/* TITLES */
+.page-title {
+  font-size: 38px;
+  font-weight: 700;
+  margin-bottom: 30px;
+}
+
+.section-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-top: 40px;
+  margin-bottom: 20px;
+}
+
+/* GENRE BUTTONS */
+.genre-container {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);  /* 5 per row */
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto 50px;  /* center + spacing */
+}
+
+.genre-pill {
+  position: relative;
+  background: #1a191f;
+  padding: 14px 26px;
+  border-radius: 14px;
+  font-size: 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s;
+  overflow: hidden;
+  text-align: center;    /* Keep text centered */
+}
+
+/* Thick vertical colored bar */
+.genre-pill::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 9px;             /* thicker color bar */
+  height: 100%;
+  background: var(--genre-color);
+  border-radius: 8px 0 0 8px;
+}
+
+/* Hover animation */
+.genre-pill:hover {
+  transform: translateY(-4px);
+  background: #24232b;
+}
+
+/* COLORS */
+.genre-rock      { --genre-color: #a71e29; }
+.genre-chill     { --genre-color: #87e3ff; }
+.genre-jazz      { --genre-color: #e4e14a; }
+.genre-arabic    { --genre-color: #db9b55; }
+.genre-kpop      { --genre-color: #1f17b5; }
+.genre-sad       { --genre-color: #ffffff; }
+.genre-energetic { --genre-color: #2dcd1b; }
+.genre-goodvibes { --genre-color: #e54da8; }
+.genre-darkrnb   { --genre-color: #4f0283; }
+.genre-lofi      { --genre-color: #8fcd9a; }
+
+/* ALBUM GRID */
+.album-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 32px;
+  margin-top: 20px;
+}
+
+.album-card {
+  background: #16151c;
+  border-radius: 15px;
+  padding: 15px;
+  transition: 0.2s;
+}
+
+.album-card:hover {
+  background: #211f29;
+  transform: translateY(-6px);
+}
+
+.album-img {
+  width: 100%;
+  height: 230px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+
+.album-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.album-artist {
+  opacity: 0.7;
+  font-size: 14px;
+}

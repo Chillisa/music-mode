@@ -1,9 +1,7 @@
-const express = require("express");
-const router = express.Router();
+const router = require("express").Router();
 const browseController = require("../controllers/browseController");
 
-// Public browse routes
-router.get("/songs", browseController.getAllSongs);
-router.get("/albums", browseController.getAllAlbums);
+router.get("/genres", browseController.getGenres);
+router.get("/genres/:name", browseController.getByGenre);
 
 module.exports = router;
