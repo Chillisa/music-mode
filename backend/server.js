@@ -16,6 +16,7 @@ const likeRoutes = require("./routes/likeRoutes");
 const artistStatsRoutes = require("./routes/artistStatsRoutes");
 
 const browseRoutes = require("./routes/browseRoutes");
+
 const searchRoutes = require("./routes/searchRoutes");
 
 const app = express();
@@ -55,6 +56,7 @@ app.use("/api/artist", artistStatsRoutes);
 // browse and search routes
 app.use("/api/browse", browseRoutes);
 app.use("/api/search", searchRoutes);
+
 
 
 // Test protected route

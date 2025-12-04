@@ -2,36 +2,35 @@ const Album = require("../models/Album");
 const Song = require("../models/Song");
 
 module.exports = {
-  // ======================================================
-  // CREATE ALBUM — saves cover + album metadata
-  // ======================================================
+
+  // =========================
+  // CREATE ALBUM
+  // =========================
   createAlbum: async (req, res) => {
     try {
-      const { title, description } = req.body;
+      const { title, description, genre } = req.body;
 
       if (!title) {
         return res.status(400).json({ message: "Album title is required" });
       }
 
-      // Artist email from JWT token
       const artist = req.user?.email;
-
       if (!artist) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      // Multer stores file in /uploads/covers/
       let coverImage = "";
       if (req.file) {
         coverImage = `/uploads/covers/${req.file.filename}`;
       }
 
       const newAlbum = new Album({
-        title,
-        description,
-        artist,
-        coverImage,
-      });
+  title,
+  description,
+  genre,
+  artist,
+  coverImage,
+});
 
       await newAlbum.save();
 
@@ -39,21 +38,19 @@ module.exports = {
         message: "Album created successfully",
         album: newAlbum,
       });
+
     } catch (err) {
       console.error("Album create error:", err);
       res.status(500).json({ message: "Server error" });
     }
   },
 
-  // ======================================================
-  // GET ALL ALBUMS — used for public browsing
-  // ======================================================
+  // =========================
+  // GET ALL ALBUMS
+  // =========================
   getAllAlbums: async (req, res) => {
     try {
-      const albums = await Album
-        .find()
-        .sort({ createdAt: -1 });
-
+      const albums = await Album.find().sort({ createdAt: -1 });
       res.json(albums);
     } catch (err) {
       console.error("Get albums error:", err);
@@ -61,9 +58,9 @@ module.exports = {
     }
   },
 
-  // ======================================================
-  // GET ALBUM + SONGS — used in AlbumPage
-  // ======================================================
+  // =========================
+  // GET ALBUM + SONGS
+  // =========================
   getAlbumWithSongs: async (req, res) => {
     try {
       const albumId = req.params.id;
@@ -75,151 +72,147 @@ module.exports = {
 
       const songs = await Song.find({ albumId });
 
-      res.json({
-        album,
-        songs,
-      });
+      res.json({ album, songs });
+
     } catch (err) {
       console.error("Album fetch error:", err);
       res.status(500).json({ message: "Server error" });
     }
   },
 
-  // ======================================================
-  // GET ONLY ARTIST'S OWN ALBUMS — for Artist Library
-  // ======================================================
+  // =========================
+  // GET ARTIST'S ALBUMS
+  // =========================
   getMyAlbums: async (req, res) => {
-  try {
-    const artistEmail = req.user?.email;
+    try {
+      const artistEmail = req.user?.email;
 
-    if (!artistEmail) {
-      return res.status(401).json({ message: "Unauthorized" });
+      if (!artistEmail) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const albums = await Album.find({ artist: artistEmail }).sort({ createdAt: -1 });
+
+      const albumsWithCounts = await Promise.all(
+        albums.map(async (album) => {
+          const songCount = await Song.countDocuments({ albumId: album._id });
+          return { ...album.toObject(), songsCount: songCount };
+        })
+      );
+
+      res.json(albumsWithCounts);
+
+    } catch (err) {
+      console.error("Get my albums error:", err);
+      res.status(500).json({ message: "Server error fetching artist albums" });
     }
+  },
 
-    // Fetch albums belonging to this artist
-    const albums = await Album.find({ artist: artistEmail }).sort({ createdAt: -1 });
+  // =========================
+  // UPDATE ALBUM
+  // =========================
+  updateAlbum: async (req, res) => {
+    try {
+      const albumId = req.params.id;
 
-    // Add song count for each album
-    const albumsWithCounts = await Promise.all(
-      albums.map(async (album) => {
-        const songCount = await Song.countDocuments({ albumId: album._id });
-        return {
-          ...album.toObject(),
-          songsCount: songCount,
-        };
-      })
-    );
+      const album = await Album.findById(albumId);
+      if (!album) return res.status(404).json({ message: "Album not found" });
 
-    res.json(albumsWithCounts);
+      if (album.artist !== req.user.email) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
 
-  } catch (err) {
-    console.error("Get my albums error:", err);
-    res.status(500).json({ message: "Server error fetching artist albums" });
-  }
-},
+      const { title, description } = req.body;
 
-  // ======================================================
-  // Update album
-  // ======================================================
-updateAlbum: async (req, res) => {
-  try {
-    const albumId = req.params.id;
+      if (title) album.title = title;
+      if (description) album.description = description;
 
-    const album = await Album.findById(albumId);
-    if (!album) return res.status(404).json({ message: "Album not found" });
+      if (req.file) {
+        album.coverImage = `/uploads/covers/${req.file.filename}`;
+      }
 
-    // Only album owner can edit
-    if (album.artist !== req.user.email) {
-      return res.status(403).json({ message: "Unauthorized" });
+      await album.save();
+
+      res.json({ message: "Album updated!", album });
+
+    } catch (err) {
+      console.error("Update album error:", err);
+      res.status(500).json({ message: "Server error" });
     }
+  },
 
-    const { title, description } = req.body;
+  // =========================
+  // ADD SONGS TO ALBUM (FIXED)
+  // =========================
+  addSongs: async (req, res) => {
+    try {
+      const albumId = req.params.id;
 
-    if (title) album.title = title;
-    if (description) album.description = description;
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ message: "No songs uploaded" });
+      }
 
-    // Replace cover if new upload exists
-    if (req.file) {
-      album.coverImage = `/uploads/covers/${req.file.filename}`;
+      const inserted = [];
+
+      for (let file of req.files) {
+        const song = new Song({
+  albumId,
+  artist: req.user.email,
+  title: file.originalname.replace(".mp3", ""),
+  filePath: `/uploads/songs/${file.filename}`,
+  genre: req.body.genre || "Unknown",  // ⭐ ADD THIS
+});
+
+
+        await song.save();
+        inserted.push(song);
+      }
+
+      res.json({ message: "Songs added!", songs: inserted });
+
+    } catch (err) {
+      console.error("Add songs error:", err);
+      res.status(500).json({ message: "Server error" });
     }
+  },
 
-    await album.save();
-
-    res.json({ message: "Album updated!", album });
-  } catch (err) {
-    console.error("Update album error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-},
-
-
-addSongs: async (req, res) => {
-  try {
-    const albumId = req.params.id;
-
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ message: "No songs uploaded" });
+  // =========================
+  // DELETE SONG
+  // =========================
+  deleteSong: async (req, res) => {
+    try {
+      const id = req.params.songId;
+      await Song.findByIdAndDelete(id);
+      res.json({ message: "Song deleted!" });
+    } catch (err) {
+      res.status(500).json({ message: "Server error" });
     }
+  },
 
-    const inserted = [];
-
-    for (let file of req.files) {
-      const song = new Song({
-        albumId,
-        artist: req.user.email,
-        title: file.originalname.replace(".mp3", ""),
-        filePath: file.filename,
-      });
-
-      await song.save();
-      inserted.push(song);
-    }
-
-    res.json({ message: "Songs added!", songs: inserted });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
-},
-
-deleteSong: async (req, res) => {
-  try {
-    const id = req.params.songId;
-    await Song.findByIdAndDelete(id);
-    res.json({ message: "Song deleted!" });
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
-  }
-},
-
-  // ======================================================
-  // DELETE ALBUM — deletes album + ALL songs inside it
-  // ======================================================
+  // =========================
+  // DELETE ALBUM + SONGS
+  // =========================
   deleteAlbum: async (req, res) => {
-  try {
-    const artistEmail = req.user?.email;
-    const albumId = req.params.id;
+    try {
+      const artistEmail = req.user?.email;
+      const albumId = req.params.id;
 
-    // Validate album ownership
-    const album = await Album.findById(albumId);
-    if (!album) return res.status(404).json({ message: "Album not found" });
+      const album = await Album.findById(albumId);
+      if (!album) return res.status(404).json({ message: "Album not found" });
 
-    if (album.artist !== artistEmail) {
-      return res.status(403).json({ message: "You do not own this album" });
+      if (album.artist !== artistEmail) {
+        return res.status(403).json({ message: "You do not own this album" });
+      }
+
+      await Song.deleteMany({ albumId });
+      await Album.findByIdAndDelete(albumId);
+
+      res.json({ message: "Album deleted successfully" });
+
+    } catch (err) {
+      console.error("Delete album error:", err);
+      res.status(500).json({ message: "Server error deleting album" });
     }
-
-    // Delete songs
-    await Song.deleteMany({ albumId });
-
-    // Delete album
-    await Album.findByIdAndDelete(albumId);
-
-    res.json({ message: "Album deleted successfully" });
-
-  } catch (err) {
-    console.error("Delete album error:", err);
-    res.status(500).json({ message: "Server error deleting album" });
-  }
-},
+  },
 
 };

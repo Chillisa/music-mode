@@ -37,14 +37,11 @@ function PlayerBar() {
         {currentSong ? (
           <>
             <img
-              src={
-                currentSong.coverImage
-                  ? `http://localhost:5000${currentSong.coverImage}`
-                  : "https://via.placeholder.com/60x60?text=♪"
-              }
-              alt="cover"
-              className="player-cover"
-            />
+  className="player-cover"
+  src={`http://localhost:5000${currentSong.coverImage}`}
+  alt="cover"
+/>
+
             <div className="player-song-info">
               <div className="player-song-title">{currentSong.title}</div>
               <div className="player-song-artist">{currentSong.artist}</div>

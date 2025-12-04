@@ -45,12 +45,14 @@ export default function Sidebar() {
       )}
 
       {/* PLAYLISTS */}
-      <div className="playlist-section">
-        <div className="playlist-card">
-          <h3>Favorite songs</h3>
-          <p>Playlist · 24 songs</p>
-        </div>
-      </div>
+     <div
+  className="playlist-card"
+  onClick={() => navigate("/favorites")}
+>
+  <h3>Favorite songs</h3>
+  <p>Playlist</p>
+</div>
+
 
     </div>
   );
