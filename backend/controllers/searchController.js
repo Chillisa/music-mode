@@ -1,42 +1,48 @@
-const Song = require("../models/Song");
+// backend/controllers/searchController.js
 const Album = require("../models/Album");
+const Song = require("../models/Song");
 
-module.exports = {
-  search: async (req, res) => {
-    try {
-      const query = req.query.q;
+// ===============================
+// GLOBAL SEARCH (albums + songs)
+// ===============================
+exports.searchAll = async (req, res) => {
+  try {
+    const q = req.query.q;
 
-      if (!query || query.trim() === "") {
-        return res.status(400).json({ message: "Search query is required" });
-      }
-
-      const regex = new RegExp(query, "i"); // case-insensitive search
-
-      const songs = await Song.find({
-        $or: [
-          { title: regex },
-          { artist: regex }
-        ]
-      });
-
-      const albums = await Album.find({
-        $or: [
-          { title: regex },
-          { artist: regex }
-        ]
-      });
-
-      res.json({
-        query,
-        results: {
-          songs,
-          albums
-        }
-      });
-
-    } catch (err) {
-      console.error("Search error:", err);
-      res.status(500).json({ message: "Server error" });
+    if (!q || q.trim() === "") {
+      return res.json({ albums: [], songs: [] });
     }
+
+    const albums = await Album.find({
+      title: { $regex: q, $options: "i" }
+    });
+
+    const songs = await Song.find({
+      title: { $regex: q, $options: "i" }
+    });
+
+    res.json({ albums, songs });
+
+  } catch (err) {
+    console.error("SEARCH ERROR:", err);
+    res.status(500).json({ message: "Server error searching" });
+  }
+};
+
+// ===============================
+// FILTER BY GENRE
+// ===============================
+exports.filterByGenre = async (req, res) => {
+  try {
+    const { genre } = req.params;
+
+    const albums = await Album.find({ genre });
+    const songs = await Song.find({ genre });
+
+    res.json({ albums, songs });
+
+  } catch (err) {
+    console.error("GENRE FILTER ERROR:", err);
+    res.status(500).json({ message: "Server error filtering genre" });
   }
 };

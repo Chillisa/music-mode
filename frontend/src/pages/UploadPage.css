@@ -1,0 +1,98 @@
+.upload-container {
+  display: flex;
+  background: #0b0618;
+  height: 100vh;
+}
+
+.upload-main {
+  flex: 1;
+  padding: 2rem;
+  color: white;
+  overflow-y: auto;
+}
+
+.upload-content {
+  max-width: 800px;
+  margin: auto;
+}
+
+.upload-title {
+  font-size: 2.6rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.upload-label {
+  font-size: 1.2rem;
+  margin-top: 1rem;
+  margin-bottom: 0.4rem;
+  display: block;
+}
+
+.upload-input {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 12px;
+  border: none;
+  background: #d8d8d8;
+  margin-bottom: 1rem;
+}
+
+.songs-title {
+  margin-top: 2rem;
+  font-size: 1.8rem;
+}
+
+.track-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  background: rgba(255,255,255,0.05);
+  padding: 1rem;
+  border-radius: 12px;
+}
+
+.track-left {
+  flex: 1;
+}
+
+.track-title-input {
+  width: 100%;
+  padding: 0.8rem;
+  border-radius: 10px;
+  border: none;
+  background: #e5e5e5;
+  margin-bottom: 0.5rem;
+}
+
+.remove-track-btn {
+  background: #ff4b4b;
+  border: none;
+  padding: 0.8rem 1rem;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.add-track-btn {
+  background: #8e44ff;
+  padding: 0.8rem 1.3rem;
+  border: none;
+  color: white;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-top: 1rem;
+  font-size: 1rem;
+}
+
+.upload-btn {
+  width: 100%;
+  margin-top: 2rem;
+  padding: 1.2rem;
+  border-radius: 15px;
+  background: #bb68ff;
+  border: none;
+  color: white;
+  font-size: 1.4rem;
+  cursor: pointer;
+}

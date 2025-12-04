@@ -2,15 +2,15 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-// Make sure uploads folder exists
-const uploadDir = path.join(__dirname, "..", "uploads");
+const uploadDir = path.join(__dirname, "..", "uploads", "songs");
+
 if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
+  fs.mkdirSync(uploadDir, { recursive: true });
 }
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadDir); // save into /uploads
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
@@ -19,6 +19,7 @@ const storage = multer.diskStorage({
   },
 });
 
+// ❌ THIS IS THE PROBLEM
 const upload = multer({ storage });
 
 module.exports = upload;

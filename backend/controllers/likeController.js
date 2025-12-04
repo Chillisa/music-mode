@@ -1,104 +1,76 @@
-const { getMySQLPool } = require("../config/mysql");
+const Like = require("../models/Like");
 const Song = require("../models/Song");
 const Album = require("../models/Album");
 
-module.exports = {
 
-  likeItem: async (req, res) => {
-    try {
-      const { itemId, itemType } = req.body;
-      const userId = req.user.id;
+// =======================================================
+// TOGGLE LIKE
+// =======================================================
+exports.toggleLike = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { songId } = req.body;
 
-      const pool = getMySQLPool();
-
-      // Check if already liked
-      const [existing] = await pool.query(
-        "SELECT * FROM likes WHERE user_id = ? AND item_id = ?",
-        [userId, itemId]
-      );
-
-      if (existing.length > 0) {
-        return res.status(400).json({ message: "Already liked" });
-      }
-
-      // Insert like
-      await pool.query(
-        "INSERT INTO likes (user_id, item_id, item_type) VALUES (?, ?, ?)",
-        [userId, itemId, itemType]
-      );
-
-      res.json({ message: "Liked successfully" });
-
-    } catch (err) {
-      console.error("Like error:", err);
-      res.status(500).json({ message: "Server error" });
+    if (!songId) {
+      return res.status(400).json({ message: "Missing songId" });
     }
-  },
 
-  unlikeItem: async (req, res) => {
-    try {
-      const { itemId } = req.body;
-      const userId = req.user.id;
+    const existing = await Like.findOne({ userId, songId });
 
-      const pool = getMySQLPool();
-
-      await pool.query(
-        "DELETE FROM likes WHERE user_id = ? AND item_id = ?",
-        [userId, itemId]
-      );
-
-      res.json({ message: "Unliked successfully" });
-
-    } catch (err) {
-      console.error("Unlike error:", err);
-      res.status(500).json({ message: "Server error" });
+    if (existing) {
+      await Like.deleteOne({ _id: existing._id });
+      return res.json({ liked: false });
     }
-  },
 
-  getLikedSongs: async (req, res) => {
-    try {
-      const userId = req.user.id;
-      const pool = getMySQLPool();
+    await Like.create({ userId, songId });
+    return res.json({ liked: true });
 
-      // Get liked songs (IDs)
-      const [rows] = await pool.query(
-        "SELECT item_id FROM likes WHERE user_id = ? AND item_type = 'song'",
-        [userId]
-      );
+  } catch (err) {
+    console.error("TOGGLE LIKE ERROR:", err);
+    res.status(500).json({ message: "Server error toggling like" });
+  }
+};
 
-      const songIds = rows.map(r => r.item_id);
 
-      // Fetch songs from MongoDB
-      const songs = await Song.find({ _id: { $in: songIds } });
 
-      res.json(songs);
-      
-    } catch (err) {
-      console.error("Get liked songs error:", err);
-      res.status(500).json({ message: "Server error" });
-    }
-  },
+// =======================================================
+// GET FAVORITE SONGS  (FIXED VERSION)
+// =======================================================
+exports.getFavoriteSongs = async (req, res) => {
+  try {
+    const userId = req.user.id;
 
-  getLikedAlbums: async (req, res) => {
-    try {
-      const userId = req.user.id;
-      const pool = getMySQLPool();
+    // Load likes with song + album populated
+    let likes = await Like.find({ userId })
+      .populate({
+        path: "songId",
+        populate: { path: "albumId", model: "Album" }
+      });
 
-      // Get liked albums (IDs)
-      const [rows] = await pool.query(
-        "SELECT item_id FROM likes WHERE user_id = ? AND item_type = 'album'",
-        [userId]
-      );
+    // FILTER OUT INVALID SONGS (null references)
+    likes = likes.filter(like => like.songId !== null);
 
-      const albumIds = rows.map(r => r.item_id);
+    // Optional: auto-clean DB of broken likes
+    await Like.deleteMany({ userId, songId: null });
 
-      const albums = await Album.find({ _id: { $in: albumIds } });
+    // Build final song objects safely
+    const songs = likes.map(like => {
+      const song = like.songId;
 
-      res.json(albums);
+      return {
+        _id: song._id,
+        title: song.title,
+        artist: song.artist,
+        filePath: song.filePath,  // your PlayerContext uses this
+        duration: 0,              // frontend loads this
+        coverImage: song.albumId?.coverImage || "/default.jpg"
+      };
+    });
 
-    } catch (err) {
-      console.error("Get liked albums error:", err);
-      res.status(500).json({ message: "Server error" });
-    }
+    res.json({ songs });
+
+  } catch (err) {
+    console.error("GET FAVORITES ERROR:", err);
+    res.status(500).json({ message: "Server error fetching favorite songs" });
   }
 };

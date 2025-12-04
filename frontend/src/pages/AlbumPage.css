@@ -1,0 +1,138 @@
+.album-container {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: #000;
+}
+
+/* Right content */
+.album-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  color: white;
+  overflow: visible;
+}
+
+/* Scrollable content */
+.album-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 1rem;
+  padding-bottom: 180px;
+}
+
+/* TOP SECTION */
+.album-header {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+}
+
+/* Album cover (gradient square) */
+.album-cover {
+  width: 250px;
+  height: 250px;
+  background: linear-gradient(180deg, #9effff, #e6a3ff, #000);
+  border-radius: 8px;
+}
+
+/* Titles */
+.album-title {
+  font-size: 3rem;
+  margin: 0;
+}
+
+.album-meta {
+  opacity: 0.7;
+  margin-top: 0.3rem;
+  font-size: 1.1rem;
+}
+
+/* Buttons */
+.album-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.circle-btn {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  background: #222;
+  border: none;
+  color: white;
+  font-size: 1.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.play-btn {
+  background: #7e3cff;
+}
+
+/* TRACK LIST */
+/* Track list container is already there */
+.track-list {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.track-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #101010;
+  padding: 0.9rem 1.2rem;
+  border-radius: 10px;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.track-row:hover {
+  background: #181818;
+  transform: translateY(-1px);
+}
+
+.track-number-title {
+  font-size: 1rem;
+}
+
+/* Right side of track row: duration + small play */
+.track-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.track-duration {
+  font-size: 0.9rem;
+  color: #bbb;
+  min-width: 40px;
+  text-align: right;
+}
+
+.track-play-btn {
+  border: none;
+  background: #a644c4;
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.25rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: 0.2s;
+}
+
+.album-cover-img {
+  width: 250px;
+  height: 250px;
+  border-radius: 10px;
+  object-fit: cover;
+}

@@ -1,0 +1,91 @@
+.artistlibrary-container {
+  display: flex;
+  height: 100vh;
+  background: #0d0b16; /* same as homepage background */
+  color: white;
+}
+
+/* main content area */
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;        /* <-- FIX SCROLL */
+  background: #0d0b16;     /* <-- FIX WHITE BACKGROUND */
+  padding-bottom: 150px;   /* <-- space above PlayerBar */
+}
+
+/* Section title */
+.section-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+
+/* GRID */
+.artist-album-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.5rem;
+  padding-bottom: 3rem;
+}
+
+/* Album card */
+.artist-album-card {
+  background: #151515;
+  border-radius: 16px;
+  padding: 1rem;
+  transition: 0.2s;
+  cursor: pointer;
+}
+
+.artist-album-card:hover {
+  transform: translateY(-3px);
+  background: #1e1e1e;
+}
+
+/* album cover */
+.artist-album-cover {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+/* Album info */
+.artist-album-info {
+  margin-top: 0.7rem;
+}
+
+.artist-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.8rem;
+}
+
+/* edit/delete buttons */
+.artist-btn {
+  padding: 0.5rem 0.8rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.edit-btn {
+  background: #444;
+  color: white;
+}
+
+.edit-btn:hover {
+  background: #666;
+}
+
+.delete-btn {
+  background: #c0392b;
+  color: white;
+}
+
+.delete-btn:hover {
+  background: #e74c3c;
+}

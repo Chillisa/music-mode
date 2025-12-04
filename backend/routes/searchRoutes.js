@@ -1,8 +1,7 @@
-const express = require("express");
-const router = express.Router();
+const router = require("express").Router();
 const searchController = require("../controllers/searchController");
 
-// /api/search?q=keyword
-router.get("/", searchController.search);
+router.get("/", searchController.searchAll);
+router.get("/genre/:genre", searchController.filterByGenre);
 
 module.exports = router;

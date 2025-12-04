@@ -1,0 +1,55 @@
+.track-list {
+  margin-top: 20px;
+}
+
+.track-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: #111;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  transition: 0.2s;
+}
+
+.track-row:hover {
+  background: #1b1b1b;
+}
+
+.track-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.track-play-btn {
+  background: #a855f7;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  color: white;
+}
+
+.like-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.favorites-container {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  background: #0d0d0d;
+  color: white;
+}
+
+.favorites-main {
+  flex: 1;
+  padding: 30px 40px;
+  overflow-y: auto;
+}
