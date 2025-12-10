@@ -13,18 +13,14 @@ function formatTime(seconds) {
   return `${m}:${s}`;
 }
 
-// ------------------------------
-// UNIVERSAL SONG URL BUILDER
-// ------------------------------
+// UNIVERSAL SONG URL HANDLER
 function buildSongUrl(song) {
   if (!song) return "";
 
-  // NEW SONGS: stored with full path `/uploads/songs/filename.mp3`
   if (song.filePath?.startsWith("/uploads/")) {
     return `http://localhost:5000${song.filePath}`;
   }
 
-  // OLD SONGS: need stream endpoint
   return `http://localhost:5000/api/songs/stream/${song._id}`;
 }
 
@@ -35,27 +31,35 @@ export default function FavoritesPage() {
 
   const { setQueue, playFromQueue } = useContext(PlayerContext);
 
+  // ⭐ LOAD USERNAME FOR TOPBAR
+  const user = JSON.parse(localStorage.getItem("user"));
+  const username = user?.username || "User";
+
   // LOAD FAVORITES
-  useEffect(() => {
-    async function loadFavorites() {
-      try {
-        const data = await getFavoriteSongs();
-        setSongs(data || []);
-        setLikedSongs((data || []).map((s) => s._id));
-      } catch (err) {
-        console.error("Favorites error:", err);
-        setSongs([]);
-      } finally {
-        setLoading(false);
-      }
+  // LOAD FAVORITES
+useEffect(() => {
+  async function loadFavorites() {
+    try {
+      const data = await getFavoriteSongs();
+
+      // 🔥 trust backend order (newest first)
+      const list = data || [];
+
+      setSongs(list);
+      setLikedSongs(list.map((s) => s._id));
+    } catch (err) {
+      console.error("Favorites error:", err);
+      setSongs([]);
+    } finally {
+      setLoading(false);
     }
+  }
 
-    loadFavorites();
-  }, []);
+  loadFavorites();
+}, []);
 
-  // ------------------------------
-  // PRELOAD DURATION (FIXED)
-  // ------------------------------
+
+  // PRELOAD DURATIONS
   useEffect(() => {
     songs.forEach((song, index) => {
       const audio = new Audio(buildSongUrl(song));
@@ -96,7 +100,8 @@ export default function FavoritesPage() {
       <Sidebar />
 
       <div className="favorites-main">
-        <TopBar />
+        {/* ⭐ USERNAME ADDED ⭐ */}
+        <TopBar username={username} />
 
         <h1 className="fav-title">❤️ Favorite Songs</h1>
 
@@ -114,21 +119,13 @@ export default function FavoritesPage() {
               </span>
 
               <div className="track-right">
-                <span className="track-duration">
-                  {formatTime(song.duration)}
-                </span>
+                <span className="track-duration">{formatTime(song.duration)}</span>
 
-                <button
-                  className="like-btn"
-                  onClick={() => handleToggleLike(song._id)}
-                >
+                <button className="like-btn" onClick={() => handleToggleLike(song._id)}>
                   {likedSongs.includes(song._id) ? "❤️" : "🤍"}
                 </button>
 
-                <button
-                  className="track-play-btn"
-                  onClick={() => playSong(song)}
-                >
+                <button className="track-play-btn" onClick={() => playSong(song)}>
                   ▶
                 </button>
               </div>

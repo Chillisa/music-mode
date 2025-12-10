@@ -68,6 +68,12 @@ const navigate = useNavigate();
   ✏ Edit Album
 </button>
 
+<button 
+  className="edit-btn"
+  onClick={() => navigate(`/album-stats/${album._id}`)}
+>
+  📊 Statistics
+</button>
 
                 </div>
               </div>

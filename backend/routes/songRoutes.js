@@ -1,13 +1,10 @@
+// routes/songRoutes.js
 const router = require("express").Router();
 const songController = require("../controllers/songController");
-const authMiddleware = require("../middleware/authMiddleware");   // ✅ FIXED IMPORT
-const upload = require("../config/upload");  // keep this
+const authMiddleware = require("../middleware/authMiddleware");
+const upload = require("../config/upload");
 
-// BUT ensure it's the default export:
-console.log("UPLOAD CHECK:", upload);
-
-
-// Upload songs
+// Upload song
 router.post(
   "/upload",
   authMiddleware.verifyToken,
@@ -18,7 +15,7 @@ router.post(
 // Stream song
 router.get("/stream/:id", songController.streamSong);
 
-// Rename song  ✅ NEW
+// Update title / genre
 router.put(
   "/:songId",
   authMiddleware.verifyToken,
@@ -31,5 +28,8 @@ router.delete(
   authMiddleware.verifyToken,
   songController.deleteSong
 );
+
+// Get all songs
+router.get("/", songController.getAllSongs);
 
 module.exports = router;

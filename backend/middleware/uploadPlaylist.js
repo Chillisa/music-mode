@@ -1,30 +1,27 @@
-// backend/config/upload.js
+// middleware/upload.js  (or whatever name songRoutes uses)
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-// Correct folder for songs
 const songsDir = path.join(__dirname, "..", "uploads", "songs");
 
-// Ensure folder exists
+// make sure folder exists
 if (!fs.existsSync(songsDir)) {
   fs.mkdirSync(songsDir, { recursive: true });
 }
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, songsDir); // SAVE HERE ✔
+    // ⭐ SAVE INTO uploads/songs
+    cb(null, songsDir);
   },
   filename: (req, file, cb) => {
     const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    let ext = path.extname(file.originalname);
-
-// ⭐ If no extension, force .mp3
-if (!ext) ext = ".mp3";
-
-cb(null, unique + ext);
-
+    const ext = path.extname(file.originalname);
+    cb(null, unique + ext);
   },
 });
 
-module.exports = multer({ storage });
+const upload = multer({ storage });
+
+module.exports = upload;

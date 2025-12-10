@@ -1,5 +1,6 @@
 // src/context/PlayerContext.js
 import { createContext, useState, useRef, useEffect } from "react";
+import axios from "axios";
 
 export const PlayerContext = createContext();
 
@@ -9,26 +10,46 @@ export function PlayerProvider({ children }) {
   const [currentSong, setCurrentSong] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const [progress, setProgress] = useState(0);   // seconds
-  const [duration, setDuration] = useState(0);   // seconds
-  const [volume, setVolumeState] = useState(1);  // 0 → 1
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolumeState] = useState(1);
 
-  const [queue, setQueueState] = useState([]);   // list of songs (for prev/next)
+  const [queue, setQueueState] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
 
   const [isMuted, setIsMuted] = useState(false);
   const [lastVolume, setLastVolume] = useState(1);
 
-  // Small helper: format an audio URL from a song
- // Small helper: format an audio URL from a song
-const getStreamUrl = (song) =>
-  `http://localhost:5000/api/songs/stream/${song._id}`;   // ✅ backend port
+  const token = localStorage.getItem("token");
 
+  // 🔁 Refs so the audio event handler always sees fresh values
+  const currentSongRef = useRef(null);
+  const hasCountedRef = useRef(false);
+
+  // 🔥 STREAM URL
+  const getStreamUrl = (song) =>
+    `http://localhost:5000/api/songs/stream/${song._id}`;
+
+  // 🔥 REPORT PLAY COUNT TO BACKEND
+  const sendPlayStat = async (songId) => {
+    if (!songId) return;
+    try {
+      await axios.post(
+        "http://localhost:5000/api/song-stats/play",
+        { songId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      console.log("✅ Stream counted in DB for song:", songId);
+    } catch (err) {
+      console.error("Failed to update play count:", err);
+    }
+  };
 
   // -------------------------------
   // MAIN PLAY FUNCTION (internal)
   // -------------------------------
   const _playSongObject = (song) => {
+    console.log("▶ PLAYING SONG ID:", song?._id);
     if (!song) return;
 
     const url = getStreamUrl(song);
@@ -37,21 +58,35 @@ const getStreamUrl = (song) =>
     audioRef.current.volume = volume;
     audioRef.current.play();
 
-    setCurrentSong(song);
+    const nowPlaying = {
+      ...song,
+      coverImage:
+        song.coverImage ||
+        (song.albumId && song.albumId.coverImage) ||
+        song.playlistCover ||
+        song.albumCover ||
+        null,
+    };
+
+    setCurrentSong(nowPlaying);
+    currentSongRef.current = nowPlaying;
+
+    // reset 5s stream flag for this play
+    hasCountedRef.current = false;
+
     setIsPlaying(true);
   };
 
-  // Public: play a single song (outside of queue)
+  // Public: play a single song (outside queue)
   const playSong = (song) => {
-    setQueueState([]);          // clear queue so prev/next don’t do weird stuff
+    setQueueState([]);
     setCurrentIndex(-1);
     _playSongObject(song);
   };
 
-  // Public: set the whole queue at once
+  // Public: set the whole queue
   const setQueue = (songs) => {
     setQueueState(songs || []);
-    // don’t auto-play, AlbumPage will explicitly call playFromQueue
   };
 
   // Public: play a song from the queue by index
@@ -64,9 +99,9 @@ const getStreamUrl = (song) =>
     _playSongObject(song);
   };
 
-  // ---- PLAY / PAUSE TOGGLE ----
+  // PLAY / PAUSE TOGGLE
   const togglePlay = () => {
-    if (!currentSong) return;
+    if (!currentSongRef.current) return;
 
     if (isPlaying) {
       audioRef.current.pause();
@@ -77,33 +112,36 @@ const getStreamUrl = (song) =>
     }
   };
 
-  // ---- NEXT / PREVIOUS ----
+  // NEXT SONG
   const nextSong = () => {
     if (!queue || queue.length === 0) return;
     const hasNext = currentIndex + 1 < queue.length;
     if (!hasNext) return;
+
     const newIndex = currentIndex + 1;
     setCurrentIndex(newIndex);
     _playSongObject(queue[newIndex]);
   };
 
+  // PREVIOUS SONG
   const prevSong = () => {
     if (!queue || queue.length === 0) return;
     const hasPrev = currentIndex - 1 >= 0;
     if (!hasPrev) return;
+
     const newIndex = currentIndex - 1;
     setCurrentIndex(newIndex);
     _playSongObject(queue[newIndex]);
   };
 
-  // ---- SEEK (TIMELINE DRAG) ----
+  // SEEK (timeline drag)
   const setSeek = (value) => {
     const sec = Number(value);
     audioRef.current.currentTime = sec;
     setProgress(sec);
   };
 
-  // ---- VOLUME SLIDER ----
+  // VOLUME SLIDER
   const setVolume = (value) => {
     const v = parseFloat(value);
     audioRef.current.volume = v;
@@ -114,7 +152,7 @@ const getStreamUrl = (song) =>
     }
   };
 
-  // ---- MUTE / UNMUTE ----
+  // MUTE / UNMUTE
   const toggleMute = () => {
     if (!isMuted) {
       setLastVolume(volume || 1);
@@ -128,12 +166,23 @@ const getStreamUrl = (song) =>
     }
   };
 
-  // ---- LISTEN TO AUDIO EVENTS ----
+  // AUDIO EVENT LISTENERS
   useEffect(() => {
     const audio = audioRef.current;
 
     const handleTimeUpdate = () => {
       setProgress(audio.currentTime || 0);
+
+      // ⭐ Count stream after 5s of listening
+      if (
+        !hasCountedRef.current &&
+        audio.currentTime >= 5 &&
+        currentSongRef.current &&
+        currentSongRef.current._id
+      ) {
+        hasCountedRef.current = true; // prevent double counting
+        sendPlayStat(currentSongRef.current._id);
+      }
     };
 
     const handleLoaded = () => {
@@ -143,7 +192,11 @@ const getStreamUrl = (song) =>
     const handleEnded = () => {
       setIsPlaying(false);
       setProgress(0);
-      // optional: auto-next
+
+      // When the song fully ends, also make sure we don't count again
+      hasCountedRef.current = true;
+
+      // Auto-next
       if (queue.length > 0 && currentIndex + 1 < queue.length) {
         nextSong();
       }
@@ -158,7 +211,7 @@ const getStreamUrl = (song) =>
       audio.removeEventListener("loadedmetadata", handleLoaded);
       audio.removeEventListener("ended", handleEnded);
     };
-  }, [queue, currentIndex]); // eslint will complain if you don’t add deps
+  }, [queue, currentIndex]); // queue/index only affect auto-next
 
   return (
     <PlayerContext.Provider

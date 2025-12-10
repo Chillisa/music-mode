@@ -1,3 +1,4 @@
+// src/pages/UploadPage.jsx
 import React, { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import TopBar from "../components/TopBar";
@@ -12,7 +13,7 @@ export default function UploadPage() {
   const storedUser = JSON.parse(localStorage.getItem("user"));
   const username = storedUser?.username || "User";
 
-  // ⭐ GENRE OPTIONS
+  // Preset genre list
   const genreOptions = [
     "Rock",
     "Chill",
@@ -27,15 +28,18 @@ export default function UploadPage() {
   ];
 
   // -----------------------------
-  // HOOKS
+  // STATE
   // -----------------------------
   const [albumTitle, setAlbumTitle] = useState("");
   const [albumDesc, setAlbumDesc] = useState("");
-  const [albumGenre, setAlbumGenre] = useState(""); // ⭐ Default empty
+
+  const [albumGenre, setAlbumGenre] = useState(""); // selected
+  const [customAlbumGenre, setCustomAlbumGenre] = useState(""); // typed
+
   const [cover, setCover] = useState(null);
 
   const [tracks, setTracks] = useState([
-    { title: "", file: null, genre: "" }, // ⭐ Song genre default empty
+    { title: "", file: null, genre: "", customGenre: "" },
   ]);
 
   const [loading, setLoading] = useState(false);
@@ -62,7 +66,7 @@ export default function UploadPage() {
   // -----------------------------
   const addTrack = () => {
     if (tracks.length >= 25) return alert("Maximum 25 songs allowed");
-    setTracks([...tracks, { title: "", file: null, genre: "" }]);
+    setTracks([...tracks, { title: "", file: null, genre: "", customGenre: "" }]);
   };
 
   const removeTrack = (index) => {
@@ -71,57 +75,58 @@ export default function UploadPage() {
     setTracks(updated);
   };
 
-  const updateTrackTitle = (index, value) => {
+  const updateTrackField = (index, field, value) => {
     const updated = [...tracks];
-    updated[index].title = value;
-    setTracks(updated);
-  };
+    updated[index][field] = value;
 
-  const updateTrackGenre = (index, value) => {
-    const updated = [...tracks];
-    updated[index].genre = value;
-    setTracks(updated);
-  };
+    // If typed genre → remove selected
+    if (field === "customGenre") updated[index].genre = "";
 
-  const updateTrackFile = (index, file) => {
-    const updated = [...tracks];
-    updated[index].file = file;
+    // If selected preset → clear typed
+    if (field === "genre") updated[index].customGenre = "";
+
     setTracks(updated);
   };
 
   // -----------------------------
-  // HANDLE UPLOAD PROCESS
+  // HANDLE UPLOAD
   // -----------------------------
   const handleUpload = async () => {
     if (!albumTitle.trim()) return alert("Album title is required");
     if (!cover) return alert("Album cover is required");
-    if (!albumGenre.trim()) return alert("Album genre is required");
+
+    const finalAlbumGenre = customAlbumGenre || albumGenre;
+    if (!finalAlbumGenre.trim()) return alert("Album genre required");
 
     for (let t of tracks) {
-      if (!t.title.trim()) return alert("Every song must have a title");
-      if (!t.file) return alert("Every song needs an audio file");
-      if (!t.genre.trim()) return alert("Every song must have a genre");
+      if (!t.title.trim()) return alert("Each song must have a title");
+      if (!t.file) return alert("Each song needs an audio file");
+
+      const finalTrackGenre = t.customGenre || t.genre;
+      if (!finalTrackGenre.trim()) return alert("Each song needs a genre");
     }
 
     setLoading(true);
 
     try {
-      // ⭐ CREATE ALBUM
+      // CREATE ALBUM
       const albumForm = new FormData();
       albumForm.append("title", albumTitle);
       albumForm.append("description", albumDesc);
-      albumForm.append("genre", albumGenre); // ⭐
+      albumForm.append("genre", finalAlbumGenre);
       albumForm.append("cover", cover);
 
       const albumResponse = await createAlbum(albumForm);
       const albumId = albumResponse.album._id;
 
-      // ⭐ UPLOAD SONGS
+      // UPLOAD SONGS
       for (let t of tracks) {
+        const finalTrackGenre = t.customGenre || t.genre;
+
         const songForm = new FormData();
         songForm.append("audio", t.file);
         songForm.append("title", t.title);
-        songForm.append("genre", t.genre);
+        songForm.append("genre", finalTrackGenre);
         songForm.append("albumId", albumId);
 
         await uploadSong(songForm);
@@ -129,12 +134,13 @@ export default function UploadPage() {
 
       alert("Album uploaded successfully!");
 
-      // RESET
+      // Reset
       setAlbumTitle("");
       setAlbumDesc("");
       setAlbumGenre("");
+      setCustomAlbumGenre("");
       setCover(null);
-      setTracks([{ title: "", file: null, genre: "" }]);
+      setTracks([{ title: "", file: null, genre: "", customGenre: "" }]);
 
     } catch (err) {
       console.error(err);
@@ -145,7 +151,7 @@ export default function UploadPage() {
   };
 
   // -----------------------------
-  // RENDER UI
+  // RENDER
   // -----------------------------
   return (
     <div className="upload-container">
@@ -173,14 +179,18 @@ export default function UploadPage() {
             className="upload-input"
             value={albumDesc}
             onChange={(e) => setAlbumDesc(e.target.value)}
-          ></textarea>
+          />
 
           {/* ALBUM GENRE */}
           <label className="upload-label">Album Genre</label>
+
           <select
             className="upload-input"
             value={albumGenre}
-            onChange={(e) => setAlbumGenre(e.target.value)}
+            onChange={(e) => {
+              setAlbumGenre(e.target.value);
+              setCustomAlbumGenre("");
+            }}
           >
             <option value="">Select Genre</option>
             {genreOptions.map((g) => (
@@ -189,6 +199,17 @@ export default function UploadPage() {
               </option>
             ))}
           </select>
+
+          <input
+            type="text"
+            className="upload-input"
+            placeholder="Or type your own genre…"
+            value={customAlbumGenre}
+            onChange={(e) => {
+              setCustomAlbumGenre(e.target.value);
+              setAlbumGenre("");
+            }}
+          />
 
           {/* COVER */}
           <label className="upload-label">Album Cover</label>
@@ -211,14 +232,18 @@ export default function UploadPage() {
                   placeholder="Song title"
                   className="track-title-input"
                   value={track.title}
-                  onChange={(e) => updateTrackTitle(index, e.target.value)}
+                  onChange={(e) =>
+                    updateTrackField(index, "title", e.target.value)
+                  }
                 />
 
-                {/* SONG GENRE */}
+                {/* SONG GENRE DROPDOWN */}
                 <select
                   className="track-genre-input"
                   value={track.genre}
-                  onChange={(e) => updateTrackGenre(index, e.target.value)}
+                  onChange={(e) =>
+                    updateTrackField(index, "genre", e.target.value)
+                  }
                 >
                   <option value="">Genre</option>
                   {genreOptions.map((g) => (
@@ -228,11 +253,24 @@ export default function UploadPage() {
                   ))}
                 </select>
 
+                {/* CUSTOM SONG GENRE */}
+                <input
+                  type="text"
+                  className="track-title-input"
+                  placeholder="Or type genre…"
+                  value={track.customGenre}
+                  onChange={(e) =>
+                    updateTrackField(index, "customGenre", e.target.value)
+                  }
+                />
+
                 {/* SONG FILE */}
                 <input
                   type="file"
-                  accept="audio/mpeg"
-                  onChange={(e) => updateTrackFile(index, e.target.files[0])}
+                  accept="audio/*"
+                  onChange={(e) =>
+                    updateTrackField(index, "file", e.target.files[0])
+                  }
                 />
               </div>
 

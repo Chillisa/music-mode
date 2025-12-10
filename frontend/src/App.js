@@ -1,49 +1,106 @@
-// src/App.js
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import LandingPage from "./pages/LandingPage";
 import SignupPage from "./pages/SignupPage";
 import LoginPage from "./pages/LoginPage";
+
 import HomePage from "./pages/HomePage";
+import ProfilePage from "./pages/ProfilePage";
+
 import AlbumPage from "./pages/AlbumPage";
 import EditAlbumPage from "./pages/EditAlbumPage";
 import UploadPage from "./pages/UploadPage";
 import ArtistLibraryPage from "./pages/ArtistLibraryPage";
 import ExplorePage from "./pages/ExplorePage";
 import FavoriteSongsPage from "./pages/FavoriteSongsPage";
+import YourPlaylistsPage from "./pages/YourPlaylistsPage";
+import PlaylistPage from "./pages/PlaylistPage";
+
+import AlbumStatsPage from "./pages/AlbumStatsPage";
+
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
-  const [albums, setAlbums] = useState([]);
-
-  // 🔥 FETCH ALL ALBUMS ONCE
-  useEffect(() => {
-    fetch("http://localhost:5000/api/albums")
-      .then((res) => res.json())
-      .then((data) => setAlbums(data))
-      .catch((err) => console.error("Failed to fetch albums:", err));
-  }, []);
-
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
 
+        {/* PUBLIC */}
+        <Route path="/" element={<LandingPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
 
-        <Route path="/home" element={<HomePage />} />
+        {/* PROTECTED */}
+        <Route path="/home" element={
+          <ProtectedRoute>
+            <HomePage />
+          </ProtectedRoute>
+        } />
 
-        <Route path="/album/:id" element={<AlbumPage />} />
-        <Route path="/album/:id/edit" element={<EditAlbumPage />} />
+        <Route
+  path="/profile"
+  element={
+    <ProtectedRoute>
+      <ProfilePage />
+    </ProtectedRoute>
+  }
+/>
 
-        <Route path="/upload" element={<UploadPage />} />
-        <Route path="/artist-library" element={<ArtistLibraryPage />} />
+        <Route path="/album/:id" element={
+          <ProtectedRoute>
+            <AlbumPage />
+          </ProtectedRoute>
+        } />
 
-        {/* 🔥 PASS ALBUMS INTO EXPLORE PAGE */}
-        <Route path="/explore" element={<ExplorePage allAlbums={albums} />} />
+        <Route path="/album/:id/edit" element={
+          <ProtectedRoute>
+            <EditAlbumPage />
+          </ProtectedRoute>
+        } />
 
-        <Route path="/favorites" element={<FavoriteSongsPage />} />
+        <Route path="/album-stats/:id" element={
+          <ProtectedRoute>
+            <AlbumStatsPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/upload" element={
+          <ProtectedRoute>
+            <UploadPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/artist-library" element={
+          <ProtectedRoute>
+            <ArtistLibraryPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/your-playlists" element={
+          <ProtectedRoute>
+            <YourPlaylistsPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/playlist/:id" element={
+          <ProtectedRoute>
+            <PlaylistPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/explore" element={
+          <ProtectedRoute>
+            <ExplorePage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/favorites" element={
+          <ProtectedRoute>
+            <FavoriteSongsPage />
+          </ProtectedRoute>
+        } />
+
       </Routes>
     </Router>
   );

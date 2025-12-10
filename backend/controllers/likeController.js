@@ -1,29 +1,46 @@
+// controllers/likeController.js
 const Like = require("../models/Like");
 const Song = require("../models/Song");
-const Album = require("../models/Album");
+const { getMySQLPool } = require("../config/mysql");
+
 
 
 // =======================================================
-// TOGGLE LIKE
+// UNIVERSAL TOGGLE LIKE (SONG + ALBUM)
 // =======================================================
 exports.toggleLike = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { songId } = req.body;
+    const { itemId } = req.body;
 
-    if (!songId) {
-      return res.status(400).json({ message: "Missing songId" });
-    }
+    if (!itemId)
+      return res.status(400).json({ message: "Missing itemId" });
 
-    const existing = await Like.findOne({ userId, songId });
+    const db = getMySQLPool();
 
-    if (existing) {
-      await Like.deleteOne({ _id: existing._id });
+    // Check if the song is already liked
+    const [existing] = await db.query(
+      `SELECT * FROM likes WHERE user_id=? AND item_id=? AND item_type='song'`,
+      [userId, itemId]
+    );
+
+    if (existing.length > 0) {
+      // UNLIKE
+      await db.query(
+        `DELETE FROM likes WHERE user_id=? AND item_id=? AND item_type='song'`,
+        [userId, itemId]
+      );
       return res.json({ liked: false });
     }
 
-    await Like.create({ userId, songId });
-    return res.json({ liked: true });
+    // LIKE SONG
+    await db.query(
+      `INSERT INTO likes (user_id, item_id, item_type)
+       VALUES (?, ?, 'song')`,
+      [userId, itemId]
+    );
+
+    res.json({ liked: true });
 
   } catch (err) {
     console.error("TOGGLE LIKE ERROR:", err);
@@ -32,45 +49,57 @@ exports.toggleLike = async (req, res) => {
 };
 
 
-
 // =======================================================
-// GET FAVORITE SONGS  (FIXED VERSION)
+// GET FAVORITE SONGS (LATEST FIRST)
 // =======================================================
 exports.getFavoriteSongs = async (req, res) => {
   try {
     const userId = req.user.id;
+    const db = getMySQLPool();
 
-    // Load likes with song + album populated
-    let likes = await Like.find({ userId })
-      .populate({
-        path: "songId",
-        populate: { path: "albumId", model: "Album" }
-      });
+    // 1️⃣ Get song IDs in order of LIKE time (newest first)
+    const [rows] = await db.query(
+      `SELECT item_id
+       FROM likes
+       WHERE user_id = ? AND item_type = 'song'
+       ORDER BY id DESC`,          // 🔥 newest like has highest id
+      [userId]
+    );
 
-    // FILTER OUT INVALID SONGS (null references)
-    likes = likes.filter(like => like.songId !== null);
+    if (rows.length === 0) {
+      return res.json({ songs: [] });
+    }
 
-    // Optional: auto-clean DB of broken likes
-    await Like.deleteMany({ userId, songId: null });
+    const songIds = rows.map((r) => r.item_id);
 
-    // Build final song objects safely
-    const songs = likes.map(like => {
-      const song = like.songId;
+    // 2️⃣ Fetch songs from Mongo in that order
+    // Mongo doesn't keep our custom order, so we rebuild it.
+    let songs = await Song.find({ _id: { $in: songIds } }).populate("albumId");
+    songs = songs.filter((s) => s != null);
 
-      return {
-        _id: song._id,
-        title: song.title,
-        artist: song.artist,
-        filePath: song.filePath,  // your PlayerContext uses this
-        duration: 0,              // frontend loads this
-        coverImage: song.albumId?.coverImage || "/default.jpg"
-      };
+    const songMap = new Map();
+    songs.forEach((s) => {
+      songMap.set(String(s._id), s);
     });
 
-    res.json({ songs });
+    const orderedSongs = songIds
+      .map((id) => songMap.get(id))
+      .filter((s) => s);
 
+    const formatted = orderedSongs.map((song) => ({
+      _id: song._id,
+      title: song.title,
+      artist: song.artist,
+      filePath: song.filePath,
+      duration: song.duration || 0,
+      coverImage: song.albumId?.coverImage || "/default.jpg",
+    }));
+
+    res.json({ songs: formatted });
   } catch (err) {
     console.error("GET FAVORITES ERROR:", err);
     res.status(500).json({ message: "Server error fetching favorite songs" });
   }
 };
+
+

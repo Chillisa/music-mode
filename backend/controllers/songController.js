@@ -1,35 +1,55 @@
-// controllers/songController.js
 const Song = require("../models/Song");
 const path = require("path");
+const mm = require("music-metadata");
+const { getMySQLPool } = require("../config/mysql");
 
 module.exports = {
+
   // ======================================================
-  // UPLOAD SONG
+  // UPLOAD SONG (with duration extraction)
   // ======================================================
   uploadSong: async (req, res) => {
     try {
-      const { title, albumId } = req.body;
+      const { title, albumId, genre } = req.body;
 
       if (!req.file) {
         return res.status(400).json({ message: "No song file uploaded" });
       }
 
-      const artist = req.user.email; // use email from JWT
+      const artist = req.user.email;
+
+      const fullPath = path.join(
+        __dirname,
+        "..",
+        "uploads",
+        "songs",
+        req.file.filename
+      );
+
+      let duration = 0;
+      try {
+        const metadata = await mm.parseFile(fullPath);
+        duration = Math.floor(metadata.format.duration || 0);
+      } catch (err) {
+        console.log("Could not extract duration:", err.message);
+      }
 
       const newSong = new Song({
         title,
         artist,
         albumId: albumId || null,
-        // keep whatever format you've been using so far for single uploads
         filePath: req.file.filename,
+        duration,
+        genre: genre || "Unknown",
       });
 
       await newSong.save();
 
-      res.json({
+      return res.json({
         message: "Song uploaded successfully",
         song: newSong,
       });
+
     } catch (err) {
       console.error("Upload error:", err);
       res.status(500).json({ message: "Upload failed" });
@@ -37,40 +57,35 @@ module.exports = {
   },
 
   // ======================================================
-  // STREAM SONG  (FIXED to handle both filePath formats)
+  // STREAM SONG + RECORD PLAY COUNT
   // ======================================================
-  streamSong: async (req, res) => {
+ streamSong: async (req, res) => {
     try {
-      const song = await Song.findById(req.params.id);
+      const songId = req.params.id;
+      const song = await Song.findById(songId);
+      if (!song) return res.status(404).json({ message: "Song not found" });
 
-      if (!song) {
-        return res.status(404).json({ message: "Song not found" });
-      }
-
+      // Just resolve file path and send the file
       let relPath;
 
-      // If filePath already looks like "uploads/..." or "/uploads/..."
       if (
         song.filePath.startsWith("/uploads/") ||
         song.filePath.startsWith("uploads/")
       ) {
-        // remove any leading slash so path.join works from project root
         relPath = song.filePath.replace(/^\/+/, "");
       } else {
-        // old style: just filename → put it under uploads/songs/
         relPath = path.join("uploads", "songs", song.filePath);
       }
 
-      const filePath = path.join(__dirname, "..", relPath);
+      const fullPath = path.join(__dirname, "..", relPath);
 
-      return res.sendFile(filePath, (err) => {
-        if (err) {
-          console.error("Error sending song file:", err);
-          if (!res.headersSent) {
-            res.status(500).json({ message: "Error streaming song" });
-          }
+      return res.sendFile(fullPath, (err) => {
+        if (err && !res.headersSent) {
+          console.error("Error streaming song:", err);
+          res.status(500).json({ message: "Error streaming song" });
         }
       });
+
     } catch (err) {
       console.error("Stream error:", err);
       if (!res.headersSent) {
@@ -80,26 +95,38 @@ module.exports = {
   },
 
   // ======================================================
-  // RENAME SONG
+  // UPDATE SONG TITLE + GENRE
   // ======================================================
   renameSong: async (req, res) => {
     try {
-      const songId = req.params.songId;
-      const { newTitle } = req.body;
+      const { songId } = req.params;
+      const { newTitle, newGenre } = req.body;
 
-      if (!newTitle || !newTitle.trim()) {
-        return res.status(400).json({ message: "New title is required" });
+      if (
+        (!newTitle || !newTitle.trim()) &&
+        (!newGenre || !newGenre.trim())
+      ) {
+        return res
+          .status(400)
+          .json({ message: "Nothing to update (title / genre missing)" });
       }
 
       const song = await Song.findById(songId);
       if (!song) return res.status(404).json({ message: "Song not found" });
 
-      song.title = newTitle.trim();
+      if (newTitle && newTitle.trim()) {
+        song.title = newTitle.trim();
+      }
+      if (newGenre && newGenre.trim()) {
+        song.genre = newGenre.trim();
+      }
+
       await song.save();
 
-      res.json({ message: "Song renamed successfully", song });
+      res.json({ message: "Song updated", song });
+
     } catch (err) {
-      console.error("Rename song error:", err);
+      console.error("Rename error:", err);
       res.status(500).json({ message: "Server error renaming song" });
     }
   },
@@ -109,12 +136,26 @@ module.exports = {
   // ======================================================
   deleteSong: async (req, res) => {
     try {
-      const id = req.params.songId;
-      await Song.findByIdAndDelete(id);
+      await Song.findByIdAndDelete(req.params.songId);
+
       res.json({ message: "Song deleted" });
     } catch (err) {
-      console.error("Delete song error:", err);
-      res.status(500).json({ message: "Server error" });
+      console.error("Delete error:", err);
+      res.status(500).json({ message: "Server error deleting song" });
     }
   },
-};
+
+  // ======================================================
+  // GET ALL SONGS 
+  // ======================================================
+  getAllSongs: async (req, res) => {
+    try {
+      const songs = await Song.find().sort({ createdAt: -1 });
+      res.json({ songs });
+    } catch (err) {
+      console.error("Get all songs error:", err);
+      res.status(500).json({ message: "Server error fetching songs" });
+    }
+  },
+
+}; // <-- THIS WAS MISSING BEFORE
