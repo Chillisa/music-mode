@@ -1,9 +1,11 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import "./Sidebar.css";
 
 export default function Sidebar() {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const user = JSON.parse(localStorage.getItem("user"));
   const isArtist = user?.role === "artist";
 
@@ -17,15 +19,17 @@ export default function Sidebar() {
         <div className="icon-btn" onClick={() => navigate("/player")}>▶</div>
       </div>
 
-      {/* TITLE */}
       <h2 className="sidebar-title">Your library</h2>
 
-      {/* CREATE BUTTON */}
-      <button className="side-btn" onClick={() => navigate("/create")}>
-        + Create
-      </button>
+      {/* YOUR PLAYLISTS  (FIXED ROUTE) */}
+      <div
+        className={`sidebar-item ${location.pathname === "/your-playlists" ? "active" : ""}`}
+        onClick={() => navigate("/your-playlists")}
+      >
+        🎧 Your Playlists
+      </div>
 
-      {/* ARTIST BUTTONS */}
+      {/* ARTIST ONLY BUTTONS */}
       {isArtist && (
         <>
           <button
@@ -44,15 +48,14 @@ export default function Sidebar() {
         </>
       )}
 
-      {/* PLAYLISTS */}
-     <div
-  className="playlist-card"
-  onClick={() => navigate("/favorites")}
->
-  <h3>Favorite songs</h3>
-  <p>Playlist</p>
-</div>
-
+      {/* FAVORITES */}
+      <div
+        className={`playlist-card ${location.pathname === "/favorites" ? "active" : ""}`}
+        onClick={() => navigate("/favorites")}
+      >
+        <h3>Favorite songs</h3>
+        <p>Playlist</p>
+      </div>
 
     </div>
   );

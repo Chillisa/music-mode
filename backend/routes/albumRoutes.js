@@ -1,31 +1,26 @@
+// routes/albumRoutes.js
 const router = require("express").Router();
 const albumController = require("../controllers/albumController");
 const authMiddleware = require("../middleware/authMiddleware");
 
 const multer = require("multer");
-const uploadCovers = multer({ dest: "uploads/covers/" });  // ✅ correct uploader
-const uploadSongs = require("../config/upload");           // songs uploader
+const uploadCovers = multer({ dest: "uploads/covers/" });
+const uploadSongs = require("../config/upload");
 
-// ===============================
-// CREATE ALBUM (with cover)
-// ===============================
+// CREATE ALBUM
 router.post(
   "/",
   authMiddleware.verifyToken,
-  uploadCovers.single("cover"),     // ✅ FIXED NAME
+  uploadCovers.single("cover"),
   albumController.createAlbum
 );
 
-// ===============================
 // GET ALL + GET MINE + GET ONE
-// ===============================
 router.get("/", albumController.getAllAlbums);
 router.get("/my", authMiddleware.verifyToken, albumController.getMyAlbums);
 router.get("/:id", albumController.getAlbumWithSongs);
 
-// ===============================
 // ADD SONGS TO ALBUM
-// ===============================
 router.post(
   "/:id/add-songs",
   authMiddleware.verifyToken,
@@ -33,9 +28,7 @@ router.post(
   albumController.addSongs
 );
 
-// ===============================
-// UPDATE ALBUM
-// ===============================
+// UPDATE ALBUM (title / desc / cover / genre)
 router.put(
   "/:id",
   authMiddleware.verifyToken,
@@ -43,9 +36,7 @@ router.put(
   albumController.updateAlbum
 );
 
-// ===============================
-// DELETE
-// ===============================
+// DELETE ALBUM
 router.delete("/:id", authMiddleware.verifyToken, albumController.deleteAlbum);
 
 module.exports = router;

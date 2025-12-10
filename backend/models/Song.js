@@ -6,9 +6,14 @@ const SongSchema = new mongoose.Schema({
   artist: { type: String, required: true },
   albumId: { type: mongoose.Schema.Types.ObjectId, ref: "Album" },
 
+  // we store just the filename; controller knows "uploads/songs"
   filePath: { type: String, required: true },
 
-  genre: { type: String, default: "Unknown" },  // ⭐ NEW
+  // duration in seconds
+  duration: { type: Number, default: 0 },
+
+  // simple text genre
+  genre: { type: String, default: "Unknown" },
 
   createdAt: { type: Date, default: Date.now },
 });

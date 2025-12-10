@@ -6,7 +6,7 @@ import TopBar from "../components/TopBar";
 import PlayerBar from "../components/PlayerBar";
 
 import { getAllAlbums } from "../api/albumApi";
-import { searchAll } from "../api/searchApi";   // ⭐ NEW
+import { searchAll } from "../api/searchApi";
 
 import "./HomePage.css";
 
@@ -16,7 +16,7 @@ function HomePage() {
   const [recommended, setRecommended] = useState([]);
   const [recentlyPlayed, setRecentlyPlayed] = useState([]);
 
-  // ⭐ SEARCH STATES
+  // SEARCH STATES
   const [searchQuery, setSearchQuery] = useState("");
   const [displayAlbums, setDisplayAlbums] = useState([]);
   const [displaySongs, setDisplaySongs] = useState([]);
@@ -31,30 +31,26 @@ function HomePage() {
     getAllAlbums().then((data) => {
       if (!data || data.length === 0) return;
 
-      // Recommended (not your albums)
       let rec = data.filter((album) => album.artist !== userEmail);
       if (rec.length < 6) rec = data;
       setRecommended(rec.slice(0, 6));
 
-      // Recently added / played
       const recent = [...data].sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
       );
       setRecentlyPlayed(recent.slice(0, 6));
 
-      // ⭐ For search: default display all albums
       setDisplayAlbums(data);
     });
   }, []);
 
   const openAlbum = (id) => navigate(`/album/${id}`);
 
-  // ⭐ SEARCH HANDLER (same logic as ExplorePage)
+  // SEARCH HANDLER
   const handleSearchChange = async (value) => {
     setSearchQuery(value);
 
     if (!value.trim()) {
-      // Reset page back to normal HomePage mode
       getAllAlbums().then((data) => setDisplayAlbums(data));
       setDisplaySongs([]);
       return;
@@ -74,7 +70,6 @@ function HomePage() {
       <Sidebar />
 
       <div className="main-content">
-        {/* ⭐ MAKE TopBar PASS SEARCH PROPS */}
         <TopBar
           username={username}
           searchValue={searchQuery}
@@ -82,7 +77,6 @@ function HomePage() {
         />
 
         <div className="content-scroll">
-          {/* If searching → hide home sections, show results */}
           {searchQuery.trim() ? (
             <>
               {/* SONG RESULTS */}
@@ -93,15 +87,21 @@ function HomePage() {
                 )}
 
                 {displaySongs.map((song) => (
-  <div
-    key={song._id}
-    className="song-result-item"
-    onClick={() => openAlbum(song.albumId)}  // ⭐ FIXED
-  >
-    🎵 {song.title}
-  </div>
-))}
-
+                  <div
+                    key={song._id}
+                    className="song-result-item"
+                    onClick={() => {
+                      if (song.albumId && song.albumId !== "none") {
+                        openAlbum(song.albumId);
+                      } else {
+                        alert("This song is not part of an album.");
+                      }
+                    }}
+                    style={{ cursor: "pointer" }}
+                  >
+                    🎵 {song.title}
+                  </div>
+                ))}
               </div>
 
               {/* ALBUM RESULTS */}
@@ -129,9 +129,7 @@ function HomePage() {
             </>
           ) : (
             <>
-              {/* NORMAL HOMEPAGE (no search) */}
-
-              {/* RECOMMENDED */}
+              {/* NORMAL HOMEPAGE */}
               <h2 className="section-title">Recommend for you</h2>
               <div className="album-grid">
                 {recommended.map((album) => (
@@ -150,7 +148,6 @@ function HomePage() {
                 ))}
               </div>
 
-              {/* RECENTLY PLAYED */}
               <h2 className="section-title">Recently played</h2>
               <div className="album-grid">
                 {recentlyPlayed.map((album) => (

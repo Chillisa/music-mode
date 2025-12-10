@@ -1,8 +1,10 @@
+// controllers/albumController.js
 const Album = require("../models/Album");
 const Song = require("../models/Song");
+const mm = require("music-metadata");
+const path = require("path");
 
 module.exports = {
-
   // =========================
   // CREATE ALBUM
   // =========================
@@ -25,12 +27,12 @@ module.exports = {
       }
 
       const newAlbum = new Album({
-  title,
-  description,
-  genre,
-  artist,
-  coverImage,
-});
+        title,
+        description,
+        genre,
+        artist,
+        coverImage,
+      });
 
       await newAlbum.save();
 
@@ -38,7 +40,6 @@ module.exports = {
         message: "Album created successfully",
         album: newAlbum,
       });
-
     } catch (err) {
       console.error("Album create error:", err);
       res.status(500).json({ message: "Server error" });
@@ -70,10 +71,10 @@ module.exports = {
         return res.status(404).json({ message: "Album not found" });
       }
 
-      const songs = await Song.find({ albumId });
+      // newest first
+      const songs = await Song.find({ albumId }).sort({ createdAt: -1 });
 
       res.json({ album, songs });
-
     } catch (err) {
       console.error("Album fetch error:", err);
       res.status(500).json({ message: "Server error" });
@@ -91,7 +92,9 @@ module.exports = {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const albums = await Album.find({ artist: artistEmail }).sort({ createdAt: -1 });
+      const albums = await Album.find({ artist: artistEmail }).sort({
+        createdAt: -1,
+      });
 
       const albumsWithCounts = await Promise.all(
         albums.map(async (album) => {
@@ -101,15 +104,16 @@ module.exports = {
       );
 
       res.json(albumsWithCounts);
-
     } catch (err) {
       console.error("Get my albums error:", err);
-      res.status(500).json({ message: "Server error fetching artist albums" });
+      res
+        .status(500)
+        .json({ message: "Server error fetching artist albums" });
     }
   },
 
   // =========================
-  // UPDATE ALBUM
+  // UPDATE ALBUM (title / desc / cover / genre)
   // =========================
   updateAlbum: async (req, res) => {
     try {
@@ -122,10 +126,11 @@ module.exports = {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
-      const { title, description } = req.body;
+      const { title, description, genre } = req.body;
 
       if (title) album.title = title;
       if (description) album.description = description;
+      if (genre) album.genre = genre;
 
       if (req.file) {
         album.coverImage = `/uploads/covers/${req.file.filename}`;
@@ -134,7 +139,6 @@ module.exports = {
       await album.save();
 
       res.json({ message: "Album updated!", album });
-
     } catch (err) {
       console.error("Update album error:", err);
       res.status(500).json({ message: "Server error" });
@@ -142,7 +146,9 @@ module.exports = {
   },
 
   // =========================
-  // ADD SONGS TO ALBUM (FIXED)
+  // ADD SONGS TO ALBUM
+  //  - uses titles[] and genres[] arrays from FormData
+  //  - extracts duration with music-metadata
   // =========================
   addSongs: async (req, res) => {
     try {
@@ -152,24 +158,53 @@ module.exports = {
         return res.status(400).json({ message: "No songs uploaded" });
       }
 
+      let { titles = [], genres = [] } = req.body;
+
+      // FormData sends single value as string, multiple as array
+      if (!Array.isArray(titles)) titles = [titles];
+      if (!Array.isArray(genres)) genres = [genres];
+
       const inserted = [];
 
-      for (let file of req.files) {
-        const song = new Song({
-  albumId,
-  artist: req.user.email,
-  title: file.originalname.replace(".mp3", ""),
-  filePath: `/uploads/songs/${file.filename}`,
-  genre: req.body.genre || "Unknown",  // ⭐ ADD THIS
-});
+      for (let i = 0; i < req.files.length; i++) {
+        const file = req.files[i];
 
+        const titleFromClient = titles[i];
+        const genreFromClient = genres[i];
+
+        const title =
+          titleFromClient && titleFromClient.trim().length > 0
+            ? titleFromClient.trim()
+            : file.originalname.replace(/\.[^/.]+$/, "");
+
+        const genre =
+          genreFromClient && genreFromClient.trim().length > 0
+            ? genreFromClient.trim()
+            : "Unknown";
+
+        // duration from actual file path
+        let duration = 0;
+        try {
+          const metadata = await mm.parseFile(file.path);
+          duration = Math.floor(metadata.format.duration || 0);
+        } catch (err) {
+          console.log("Could not read duration for", file.filename, err.message);
+        }
+
+        const song = new Song({
+          albumId,
+          artist: req.user.email,
+          title,
+          filePath: file.filename, // keep same style as uploadSong
+          genre,
+          duration,
+        });
 
         await song.save();
         inserted.push(song);
       }
 
       res.json({ message: "Songs added!", songs: inserted });
-
     } catch (err) {
       console.error("Add songs error:", err);
       res.status(500).json({ message: "Server error" });
@@ -177,7 +212,7 @@ module.exports = {
   },
 
   // =========================
-  // DELETE SONG
+  // DELETE SONG (used from EditAlbumPage)
   // =========================
   deleteSong: async (req, res) => {
     try {
@@ -208,11 +243,9 @@ module.exports = {
       await Album.findByIdAndDelete(albumId);
 
       res.json({ message: "Album deleted successfully" });
-
     } catch (err) {
       console.error("Delete album error:", err);
       res.status(500).json({ message: "Server error deleting album" });
     }
   },
-
 };

@@ -8,41 +8,29 @@ import PlayerBar from "../components/PlayerBar";
 
 import { PlayerContext } from "../context/PlayerContext";
 import { getAlbumById } from "../api/albumApi";
-import { toggleLike, getFavoriteSongs } from "../api/songApi";
+import { getFavoriteSongs } from "../api/songApi";
+import { toggleLike } from "../api/likeApi";   // ✅ NEW LIKE SYSTEM
+import { createPlaylistFromAlbum } from "../api/playlistApi";
 
 import "./AlbumPage.css";
 
+// Format seconds → mm:ss
 function formatTime(seconds) {
   if (!seconds || Number.isNaN(seconds)) return "0:00";
   const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60)
-    .toString()
-    .padStart(2, "0");
+  const s = Math.floor(seconds % 60).toString().padStart(2, "0");
   return `${m}:${s}`;
 }
 
-// Build a usable URL from whatever is in song.filePath
+// Turn filePath into full URL
 function buildSongUrl(song) {
   if (!song || !song.filePath) return "";
-
   const fp = song.filePath;
 
-  // already full URL (just in case)
-  if (fp.startsWith("http://") || fp.startsWith("https://")) {
-    return fp;
-  }
+  if (fp.startsWith("http://") || fp.startsWith("https://")) return fp;
+  if (fp.startsWith("/uploads/")) return `http://localhost:5000${fp}`;
+  if (fp.startsWith("uploads/")) return `http://localhost:5000/${fp}`;
 
-  // stored like "/uploads/songs/xyz.mp3"
-  if (fp.startsWith("/uploads/")) {
-    return `http://localhost:5000${fp}`;
-  }
-
-  // stored like "uploads/songs/xyz.mp3"
-  if (fp.startsWith("uploads/")) {
-    return `http://localhost:5000/${fp}`;
-  }
-
-  // old style: just filename
   return `http://localhost:5000/uploads/songs/${fp}`;
 }
 
@@ -51,24 +39,18 @@ function AlbumPage() {
 
   const [album, setAlbum] = useState(null);
   const [songs, setSongs] = useState([]);
-  const [durations, setDurations] = useState({}); // songId → seconds
+  const [durations, setDurations] = useState({});
   const [likedSongs, setLikedSongs] = useState([]);
+  const [albumLiked, setAlbumLiked] = useState(false);
+  const [savingPlaylist, setSavingPlaylist] = useState(false);
 
   const { setQueue, playFromQueue } = useContext(PlayerContext);
 
-  // username for top bar
+  // Username
   const storedUser = localStorage.getItem("user");
-  let username = "User";
-  if (storedUser) {
-    try {
-      const parsed = JSON.parse(storedUser);
-      if (parsed.username) username = parsed.username;
-    } catch (e) {
-      // ignore parse error
-    }
-  }
+  let username = storedUser ? JSON.parse(storedUser).username || "User" : "User";
 
-  // -------- FETCH ALBUM + SONGS --------
+  // Load album + songs
   useEffect(() => {
     async function loadAlbum() {
       try {
@@ -83,20 +65,17 @@ function AlbumPage() {
 
         setAlbum(data.album);
         setSongs(enrichedSongs);
-
-        // set queue for player (so next/prev works)
         setQueue(enrichedSongs);
       } catch (err) {
         console.error("Album fetch error:", err);
       }
     }
-
     loadAlbum();
   }, [id, setQueue]);
 
-  // -------- PRELOAD DURATIONS (like Favorites page) --------
+  // Preload durations
   useEffect(() => {
-    if (!songs || songs.length === 0) return;
+    if (!songs.length) return;
 
     songs.forEach((song) => {
       const url = buildSongUrl(song);
@@ -105,37 +84,35 @@ function AlbumPage() {
       const audio = new Audio(url);
       audio.preload = "metadata";
 
-      const handleLoaded = () => {
-        if (!Number.isNaN(audio.duration) && audio.duration > 0) {
+      audio.addEventListener("loadedmetadata", () => {
+        if (audio.duration > 0) {
           setDurations((prev) => ({
             ...prev,
             [song._id]: audio.duration,
           }));
         }
-      };
-
-      audio.addEventListener("loadedmetadata", handleLoaded);
+      });
     });
   }, [songs]);
 
-  // -------- LOAD LIKED SONGS --------
+  // Load liked songs
   useEffect(() => {
     async function loadLikes() {
       try {
-        const list = await getFavoriteSongs(); // returns array of song docs
-        setLikedSongs((list || []).map((s) => s._id));
+        const list = await getFavoriteSongs();
+        setLikedSongs(list.map((s) => s._id));
       } catch (err) {
         console.error("Favorite songs error:", err);
         setLikedSongs([]);
       }
     }
-
     loadLikes();
   }, []);
 
+  // ⭐ SONG LIKE
   const handleToggleLike = async (songId) => {
     try {
-      const res = await toggleLike(songId);
+      const res = await toggleLike(songId, "song");
 
       if (res.liked) {
         setLikedSongs((prev) => [...prev, songId]);
@@ -143,13 +120,47 @@ function AlbumPage() {
         setLikedSongs((prev) => prev.filter((id) => id !== songId));
       }
     } catch (err) {
-      console.error("Toggle like error:", err);
+      console.error("Song like error:", err);
     }
   };
 
-  // Play entire album from first track
+  // ⭐ SAVE ALBUM AS PLAYLIST (your original function — restored)
+const handleSaveAsPlaylist = async () => {
+  if (!album) return;
+
+  try {
+    setSavingPlaylist(true);
+    await createPlaylistFromAlbum(id); 
+    alert("Playlist created from this album!");
+  } catch (err) {
+    console.error("Create playlist from album error:", err);
+    alert("Could not create playlist from album.");
+  } finally {
+    setSavingPlaylist(false);
+  }
+};
+
+
+  // ⭐ ALBUM LIKE
+  const handleToggleAlbumLike = async () => {
+    try {
+      const res = await toggleLike(album._id, "album");
+
+      setAlbumLiked(res.liked);
+
+      if (res.liked) {
+        alert("Album added to your library 💜");
+      } else {
+        alert("Album removed from your library 🤍");
+      }
+    } catch (err) {
+      console.error("Album like error:", err);
+    }
+  };
+
+  // Play entire album
   const playAlbum = () => {
-    if (!songs || songs.length === 0) return;
+    if (!songs.length) return;
     playFromQueue(0);
   };
 
@@ -177,20 +188,27 @@ function AlbumPage() {
                   <h1 className="album-title">{album.title}</h1>
 
                   <p className="album-meta">
-                    {album.artist} ·{" "}
-                    {new Date(album.createdAt).getFullYear()} ·{" "}
+                    {album.artist} · {new Date(album.createdAt).getFullYear()} ·{" "}
                     {songs.length} {songs.length === 1 ? "song" : "songs"}
                   </p>
 
                   <div className="album-buttons">
-                    {/* BIG PLAY BUTTON */}
-                    <button
-                      className="circle-btn play-btn"
-                      onClick={playAlbum}
-                    >
+                    {/* PLAY */}
+                    <button className="circle-btn play-btn" onClick={playAlbum}>
                       ▶
                     </button>
-                    <button className="circle-btn">＋</button>
+
+                  
+                    {/* SAVE AS PLAYLIST */}
+                    <button
+                      className="circle-btn"
+                      onClick={handleSaveAsPlaylist}
+                      disabled={savingPlaylist}
+                      title="Save this album as playlist"
+                    >
+                      {savingPlaylist ? "…" : "💾"}
+                    </button>
+
                     <button className="circle-btn">⬇</button>
                   </div>
                 </div>
@@ -211,7 +229,7 @@ function AlbumPage() {
                           : "0:00"}
                       </span>
 
-                      {/* ❤️ LIKE BUTTON */}
+                      {/* SONG LIKE ⭐ */}
                       <button
                         className="like-btn"
                         onClick={() => handleToggleLike(song._id)}
